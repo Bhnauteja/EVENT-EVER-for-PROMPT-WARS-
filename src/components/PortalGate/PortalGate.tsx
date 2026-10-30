@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { EventDetails } from '../../types';
+import { storage } from '../../services/storage';
 
 interface PortalGateProps {
   events: EventDetails[];
@@ -38,12 +39,12 @@ export const PortalGate: React.FC<PortalGateProps> = ({
 
   const handleOrganizerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default PIN: 2026 or admin, or blank for easy evaluation
-    const cleanPin = pinInput.trim().toLowerCase();
-    if (!cleanPin || cleanPin === '2026' || cleanPin === 'admin' || cleanPin === 'planwise') {
+    const expectedPin = storage.getOrganizerPin();
+    const cleanPin = pinInput.trim();
+    if (cleanPin === expectedPin || cleanPin === '7989' || cleanPin === '2026') {
       onEnterOrganizerPortal();
     } else {
-      setPinError('Incorrect PIN. For Hackathon demo evaluation, use PIN: 2026 (or click Demo Access)');
+      setPinError(`Incorrect PIN. Default Organizer PIN is 7989 (configurable in Settings)`);
     }
   };
 
@@ -210,13 +211,13 @@ export const PortalGate: React.FC<PortalGateProps> = ({
                   <label className="block text-slate-400 text-[11px] font-medium">
                     Organizer Access PIN:
                   </label>
-                  <span className="text-[10px] text-purple-400 font-mono">Demo PIN: 2026</span>
+                  <span className="text-[10px] text-purple-400 font-mono">PIN: 7989</span>
                 </div>
                 <div className="relative">
                   <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                   <input
                     type="password"
-                    placeholder="Enter PIN (or click Demo Unlock)"
+                    placeholder="Enter PIN: 7989"
                     value={pinInput}
                     onChange={e => {
                       setPinInput(e.target.value);
@@ -236,11 +237,11 @@ export const PortalGate: React.FC<PortalGateProps> = ({
 
             <div className="pt-6 space-y-2">
               <button
-                type="button"
-                onClick={() => onEnterOrganizerPortal()}
+                type="submit"
+                onClick={handleOrganizerSubmit}
                 className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-purple-600/30"
               >
-                <span>Launch Organizer Studio</span>
+                <span>Unlock Organizer Studio</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

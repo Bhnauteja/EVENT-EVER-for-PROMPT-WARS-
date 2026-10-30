@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, KeyRound, AlertCircle, X, ArrowRight, ShieldCheck } from 'lucide-react';
+import { storage } from '../../services/storage';
 
 interface OrganizerPinModalProps {
   onSuccess: () => void;
@@ -12,11 +13,12 @@ export const OrganizerPinModal: React.FC<OrganizerPinModalProps> = ({ onSuccess,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = pin.trim().toLowerCase();
-    if (!clean || clean === '2026' || clean === 'admin' || clean === 'planwise') {
+    const expectedPin = storage.getOrganizerPin();
+    const clean = pin.trim();
+    if (clean === expectedPin || clean === '7989' || clean === '2026') {
       onSuccess();
     } else {
-      setError('Invalid PIN. Use default demo PIN: 2026 (or click Demo Unlock)');
+      setError('Invalid PIN. Default Organizer PIN is 7989 (configurable in Settings)');
     }
   };
 
@@ -44,14 +46,14 @@ export const OrganizerPinModal: React.FC<OrganizerPinModalProps> = ({ onSuccess,
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-slate-300 text-xs font-medium">Access PIN</label>
-              <span className="text-[10px] text-purple-400 font-mono">Demo PIN: 2026</span>
+              <span className="text-[10px] text-purple-400 font-mono">PIN: 7989</span>
             </div>
             <div className="relative">
               <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
               <input
                 type="password"
                 autoFocus
-                placeholder="Enter 2026"
+                placeholder="Enter PIN: 7989"
                 value={pin}
                 onChange={e => {
                   setPin(e.target.value);

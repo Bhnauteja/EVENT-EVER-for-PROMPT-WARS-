@@ -30,6 +30,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onUpdate 
   const [openaiApiKey, setOpenaiApiKey] = useState(currentSettings.openaiApiKey || '');
   const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState(currentSettings.whatsappPhoneNumberId || '');
   const [whatsappAccessToken, setWhatsappAccessToken] = useState(currentSettings.whatsappAccessToken || '');
+  const [organizerPin, setOrganizerPin] = useState(currentSettings.organizerPin || '7989');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [connTestResult, setConnTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -46,7 +47,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onUpdate 
       geminiApiKey,
       openaiApiKey,
       whatsappPhoneNumberId,
-      whatsappAccessToken
+      whatsappAccessToken,
+      organizerPin: organizerPin.trim() || '7989'
     };
     storage.saveSettings(updated);
     setSavedSuccess(true);
@@ -290,6 +292,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onUpdate 
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Section: Security & Organizer Access PIN */}
+          <div className="space-y-3 pt-2 border-t border-slate-800">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+              <span>Organizer Security & Access PIN</span>
+            </h4>
+            <p className="text-slate-400 text-[11px]">
+              Set the PIN required to unlock the Organizer Command Center from the Portal Gate or Guest view.
+            </p>
+
+            <div className="max-w-xs">
+              <label className="block text-slate-300 font-medium mb-1">Organizer Access PIN</label>
+              <input
+                type="text"
+                placeholder="7989"
+                value={organizerPin}
+                onChange={e => setOrganizerPin(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono tracking-widest text-sm"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">Default PIN is 7989. You can change this to any custom passcode anytime.</span>
             </div>
           </div>
 

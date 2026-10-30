@@ -26,6 +26,7 @@ export interface AppSettings {
   openaiApiKey?: string;
   whatsappPhoneNumberId?: string;
   whatsappAccessToken?: string;
+  organizerPin?: string;
   useLiveSupabase: boolean;
   demoModeNoticeShown: boolean;
 }
@@ -37,6 +38,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   openaiApiKey: '',
   whatsappPhoneNumberId: '',
   whatsappAccessToken: '',
+  organizerPin: '7989',
   useLiveSupabase: false,
   demoModeNoticeShown: false,
 };
@@ -402,6 +404,16 @@ class StorageService {
   saveSettings(settings: AppSettings): void {
     localStorage.setItem(this.settingsKey, JSON.stringify(settings));
     window.dispatchEvent(new CustomEvent('planwise_settings_updated'));
+  }
+
+  getOrganizerPin(): string {
+    const s = this.getSettings();
+    return s.organizerPin || '7989';
+  }
+
+  setOrganizerPin(newPin: string): void {
+    const s = this.getSettings();
+    this.saveSettings({ ...s, organizerPin: newPin });
   }
 
   // Export / Import / Reset
