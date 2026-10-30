@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   AlertTriangle,
   Megaphone,
-  UserCheck
+  UserCheck,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { EventDetails, ScheduleItem, Announcement, Guest, RSVPStatus } from '../../types';
@@ -27,9 +28,17 @@ interface PublicGuestHubProps {
   event: EventDetails;
   guestToken?: string;
   onExitGuestView?: () => void;
+  isOrganizerSession?: boolean;
+  onOpenOrganizerLogin?: () => void;
 }
 
-export const PublicGuestHub: React.FC<PublicGuestHubProps> = ({ event, guestToken, onExitGuestView }) => {
+export const PublicGuestHub: React.FC<PublicGuestHubProps> = ({
+  event,
+  guestToken,
+  onExitGuestView,
+  isOrganizerSession = false,
+  onOpenOrganizerLogin
+}) => {
   // Public data strictly filtered:
   const publishedSchedules = storage.getSchedules(event.id).filter(s => s.isGuestVisible);
   const publishedAnnouncements = storage.getAnnouncements(event.id).filter(a => a.isPublished);
@@ -157,13 +166,13 @@ export const PublicGuestHub: React.FC<PublicGuestHubProps> = ({ event, guestToke
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
-      {/* Top Banner when Organizer is previewing */}
-      {onExitGuestView && (
+      {/* Top Banner ONLY when Organizer is previewing from Organizer Studio */}
+      {isOrganizerSession && onExitGuestView && (
         <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-xs font-bold text-slate-950 flex items-center justify-between shadow-md sticky top-0 z-50">
           <span>👀 Public Guest Hub Preview Mode — Financials & internal notes are strictly hidden.</span>
           <button
             onClick={onExitGuestView}
-            className="px-2.5 py-1 bg-slate-900 text-white rounded font-semibold text-[11px] hover:bg-slate-800 transition"
+            className="px-2.5 py-1 bg-slate-900 text-white rounded font-semibold text-[11px] hover:bg-slate-800 transition shadow"
           >
             Exit to Organizer Studio
           </button>
@@ -568,9 +577,20 @@ export const PublicGuestHub: React.FC<PublicGuestHubProps> = ({ event, guestToke
         </div>
 
         {/* Footer Privacy & Safety Notice */}
-        <div className="text-center text-[11px] text-slate-500 pt-6 border-t border-slate-900 space-y-1">
+        <div className="text-center text-[11px] text-slate-500 pt-6 border-t border-slate-900 space-y-2">
           <p>PlanWise Event Coordination Platform • Privacy-Preserving Direct RSVP</p>
           <p>Only information explicitly published by the event organizer is visible on this page.</p>
+          {onOpenOrganizerLogin && (
+            <div className="pt-2">
+              <button
+                onClick={onOpenOrganizerLogin}
+                className="inline-flex items-center space-x-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 rounded-lg text-[10px] font-medium transition"
+              >
+                <Lock className="w-3 h-3 text-slate-500" />
+                <span>Organizer Dashboard Access 🔒</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -16,7 +16,9 @@ import {
   ShieldAlert,
   ChevronDown,
   Clock,
-  Compass
+  Compass,
+  Lock,
+  LogOut
 } from 'lucide-react';
 import { EventDetails } from '../types';
 
@@ -42,6 +44,7 @@ interface NavbarProps {
   onOpenQRCode: () => void;
   isGuestView: boolean;
   onToggleGuestView: () => void;
+  onExitToPortalGate?: () => void;
   riskCount: number;
 }
 
@@ -56,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenQRCode,
   isGuestView,
   onToggleGuestView,
+  onExitToPortalGate,
   riskCount,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -87,8 +91,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-xl font-extrabold tracking-tight text-white font-['Outfit']">
                   Plan<span className="text-indigo-400">Wise</span>
                 </span>
-                <span className="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full uppercase tracking-wider">
+                <span className="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full uppercase tracking-wider hidden sm:inline">
                   AI Event OS
+                </span>
+                <span className="px-2.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full uppercase tracking-wider flex items-center space-x-1">
+                  <Lock className="w-3 h-3 text-purple-400" />
+                  <span>Organizer Studio</span>
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">Plan • Manage • Coordinate</p>
@@ -186,6 +194,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Settings className="w-4 h-4 text-slate-300" />
             </button>
+
+            {/* Exit to Portal Gate button */}
+            {onExitToPortalGate && (
+              <button
+                onClick={onExitToPortalGate}
+                className="flex items-center space-x-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-750 text-slate-400 hover:text-white border border-slate-700/80 rounded-lg text-xs font-medium transition"
+                title="Switch to Portal Gate / Home"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Portal Gate</span>
+              </button>
+            )}
           </div>
         </div>
 

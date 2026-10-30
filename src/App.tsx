@@ -10,9 +10,11 @@ import { GuestManager } from './components/Guests/GuestManager';
 import { CommunicationHub } from './components/Communications/CommunicationHub';
 import { AnnouncementManager } from './components/Announcements/AnnouncementManager';
 import { PublicGuestHub } from './components/GuestHub/PublicGuestHub';
+import { PortalGate } from './components/PortalGate/PortalGate';
 import { EventFormModal } from './components/Modals/EventFormModal';
 import { SettingsModal } from './components/Modals/SettingsModal';
 import { QRCodeModal } from './components/Modals/QRCodeModal';
+import { OrganizerPinModal } from './components/Modals/OrganizerPinModal';
 import {
   EventDetails,
   ScheduleItem,
@@ -27,11 +29,17 @@ import {
 import { storage } from './services/storage';
 import { RiskAndImpactAnalyzer } from './services/riskAndImpactAnalyzer';
 
+export type PortalMode = 'landing' | 'organizer' | 'guest';
+
 export const App: React.FC = () => {
   const [events, setEvents] = useState<EventDetails[]>([]);
   const [activeEventId, setActiveEventId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
-  const [isGuestView, setIsGuestView] = useState<boolean>(false);
+  
+  // Clean role-based navigation states
+  const [portalMode, setPortalMode] = useState<PortalMode>('landing');
+  const [isOrganizerSession, setIsOrganizerSession] = useState<boolean>(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
   const [guestToken, setGuestToken] = useState<string | undefined>(undefined);
 
   // Entities for the active event
@@ -94,16 +102,42 @@ export const App: React.FC = () => {
     // 1. Initial hydration
     refreshData();
 
-    // 2. Check URL query parameters for direct guest links or guest view toggle
-    if (typeof window !== 'undefined') {
+    // 2. Parse URL path & parameters for clean role separation
+    const handleLocationChange = () => {
+      if (typeof window === 'undefined') return;
+      const path = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const tokenParam = params.get('token');
       const eventParam = params.get('event');
       const guestParam = params.get('guest');
 
+      // Check /event/:slug route
+      if (path.startsWith('/event/')) {
+        const slug = path.replace('/event/', '').split('/')[0].split('?')[0];
+        if (slug) {
+          const matching = storage.getEventBySlug(slug);
+          if (matching) {
+            storage.setActiveEventId(matching.id);
+            setActiveEventId(matching.id);
+          }
+        }
+        setPortalMode('guest');
+        if (tokenParam) setGuestToken(tokenParam);
+        return;
+      }
+
+      // Check /organizer route
+      if (path === '/organizer') {
+        setIsOrganizerSession(true);
+        setPortalMode('organizer');
+        return;
+      }
+
+      // Check query parameter fallback
       if (tokenParam) {
         setGuestToken(tokenParam);
-        setIsGuestView(true);
+        setPortalMode('guest');
+        return;
       }
 
       if (eventParam) {
@@ -112,12 +146,21 @@ export const App: React.FC = () => {
           storage.setActiveEventId(matching.id);
           setActiveEventId(matching.id);
         }
+        setPortalMode('guest');
+        return;
       }
 
       if (guestParam === 'true') {
-        setIsGuestView(true);
+        setPortalMode('guest');
+        return;
       }
-    }
+
+      // Default home/root -> Role Portal Gate
+      setPortalMode('landing');
+    };
+
+    handleLocationChange();
+    window.addEventListener('popstate', handleLocationChange);
 
     // 3. Listen to internal storage updates
     const handleUpdate = () => refreshData();
@@ -125,6 +168,7 @@ export const App: React.FC = () => {
     window.addEventListener('planwise_event_changed', handleUpdate);
 
     return () => {
+      window.removeEventListener('popstate', handleLocationChange);
       window.removeEventListener('planwise_data_updated', handleUpdate);
       window.removeEventListener('planwise_event_changed', handleUpdate);
     };
@@ -138,17 +182,56 @@ export const App: React.FC = () => {
     refreshData();
   };
 
+  const handleEnterGuestPortal = (eventId: string) => {
+    storage.setActiveEventId(eventId);
+    setActiveEventId(eventId);
+    const ev = storage.getEventById(eventId);
+    if (ev && typeof window !== 'undefined') {
+      window.history.pushState({}, '', `/event/${ev.publicSlug}`);
+    }
+    setPortalMode('guest');
+  };
+
+  const handleEnterOrganizerPortal = () => {
+    setIsOrganizerSession(true);
+    setPortalMode('organizer');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/organizer');
+    }
+  };
+
+  const handleExitToPortalGate = () => {
+    setPortalMode('landing');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* If in Guest Portal View */}
-      {isGuestView && activeEvent ? (
+      {/* 1. PORTAL GATE (Role Selection Landing Page) */}
+      {portalMode === 'landing' && (
+        <PortalGate
+          events={events}
+          activeEvent={activeEvent}
+          onEnterGuestPortal={handleEnterGuestPortal}
+          onEnterOrganizerPortal={handleEnterOrganizerPortal}
+        />
+      )}
+
+      {/* 2. GUEST ATTENDEE PORTAL (Strictly Isolated from Organizer Operations) */}
+      {portalMode === 'guest' && activeEvent && (
         <PublicGuestHub
           event={activeEvent}
           guestToken={guestToken}
-          onExitGuestView={() => setIsGuestView(false)}
+          isOrganizerSession={isOrganizerSession}
+          onExitGuestView={() => setPortalMode('organizer')}
+          onOpenOrganizerLogin={() => setIsPinModalOpen(true)}
         />
-      ) : (
-        /* Organizer Studio View */
+      )}
+
+      {/* 3. ORGANIZER COMMAND CENTER (Full Studio with All Operational Modules) */}
+      {portalMode === 'organizer' && (
         <>
           <Navbar
             events={events}
@@ -159,8 +242,9 @@ export const App: React.FC = () => {
             onOpenCreateEvent={() => setIsCreateEventOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenQRCode={() => setIsQRCodeOpen(true)}
-            isGuestView={isGuestView}
-            onToggleGuestView={() => setIsGuestView(true)}
+            isGuestView={false}
+            onToggleGuestView={() => setPortalMode('guest')}
+            onExitToPortalGate={handleExitToPortalGate}
             riskCount={riskAlerts.length}
           />
 
@@ -266,12 +350,12 @@ export const App: React.FC = () => {
             )}
           </main>
 
-          {/* Footer */}
+          {/* Organizer Footer */}
           <footer className="border-t border-slate-800/80 bg-slate-900/40 py-5 text-center text-xs text-slate-500">
             <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-slate-300">PlanWise</span>
-                <span>• Intelligent Event OS for Organizers & Guests</span>
+                <span>• Organizer Command Center Workspace</span>
               </div>
               <div className="flex items-center space-x-4">
                 <span>Deterministic Accounting</span>
@@ -307,6 +391,17 @@ export const App: React.FC = () => {
         <QRCodeModal
           event={activeEvent}
           onClose={() => setIsQRCodeOpen(false)}
+        />
+      )}
+
+      {/* Organizer PIN Unlock Modal */}
+      {isPinModalOpen && (
+        <OrganizerPinModal
+          onSuccess={() => {
+            setIsPinModalOpen(false);
+            handleEnterOrganizerPortal();
+          }}
+          onClose={() => setIsPinModalOpen(false)}
         />
       )}
     </div>
