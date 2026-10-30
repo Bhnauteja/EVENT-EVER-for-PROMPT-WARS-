@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { storage, AppSettings } from '../../services/storage';
+import { SupabaseSyncService } from '../../services/supabaseClient';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -31,6 +32,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onUpdate 
   const [whatsappAccessToken, setWhatsappAccessToken] = useState(currentSettings.whatsappAccessToken || '');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [connTestResult, setConnTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isTestingConn, setIsTestingConn] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +55,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onUpdate 
       onUpdate();
       onClose();
     }, 1200);
+  };
+
+  const handleTestConnection = async () => {
+    storage.saveSettings({
+      ...currentSettings,
+      supabaseUrl,
+      supabaseAnonKey
+    });
+    setIsTestingConn(true);
+    setConnTestResult(null);
+    const res = await SupabaseSyncService.testConnection();
+    setIsTestingConn(false);
+    setConnTestResult(res);
+  };
+
+  const handlePushCurrentEvent = async () => {
+    storage.saveSettings({
+      ...currentSettings,
+      supabaseUrl,
+      supabaseAnonKey
+    });
+    const activeEventId = storage.getActiveEventId();
+    const event = storage.getEventById(activeEventId);
+    if (!event) return;
+
+    setIsSyncing(true);
+    setSyncResult(null);
+    const res = await SupabaseSyncService.pushLocalEventToCloud(event);
+    setIsSyncing(false);
+    setSyncResult(res.message);
   };
 
   const handleExportBackup = () => {
@@ -153,6 +188,42 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onUpdate 
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono"
               />
             </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isTestingConn || !supabaseUrl || !supabaseAnonKey}
+                onClick={handleTestConnection}
+                className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold transition disabled:opacity-40"
+              >
+                {isTestingConn ? 'Testing...' : '⚡ Test Supabase Connection'}
+              </button>
+
+              <button
+                type="button"
+                disabled={isSyncing || !supabaseUrl || !supabaseAnonKey}
+                onClick={handlePushCurrentEvent}
+                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-semibold transition disabled:opacity-40"
+              >
+                {isSyncing ? 'Syncing...' : '☁️ Push Active Event to Cloud'}
+              </button>
+            </div>
+
+            {connTestResult && (
+              <div className={`p-2.5 rounded-lg text-[11px] leading-relaxed border ${
+                connTestResult.success
+                  ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30'
+                  : 'bg-rose-950/40 text-rose-300 border-rose-500/30'
+              }`}>
+                {connTestResult.message}
+              </div>
+            )}
+
+            {syncResult && (
+              <div className="p-2.5 rounded-lg text-[11px] bg-slate-950 text-slate-300 border border-slate-800">
+                {syncResult}
+              </div>
+            )}
           </div>
 
           {/* Section 2: AI Provider Keys */}
