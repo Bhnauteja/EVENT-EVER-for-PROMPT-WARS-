@@ -1,5 +1,12 @@
 # PlanWise — Intelligent Event Planning & Coordination Platform
 
+[![Live App](https://img.shields.io/badge/Live%20Demo-event--ever--for--prompt--wars.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://event-ever-for-prompt-wars.vercel.app)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/bhanu236876543/EVENT-EVER-for-PROMPT-WARS-)
+[![Database](https://img.shields.io/badge/Supabase-PostgreSQL%20RLS-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
+
+🔗 **Live Production URL:** [https://event-ever-for-prompt-wars.vercel.app](https://event-ever-for-prompt-wars.vercel.app)  
+📱 **Public Guest Hub Demo:** [https://event-ever-for-prompt-wars.vercel.app/event/techsprint-2026](https://event-ever-for-prompt-wars.vercel.app/event/techsprint-2026)
+
 **PlanWise** is a full-stack, AI-powered event coordination operating system designed for event organizers and attendees. It connects fragmented event planning workflows—schedules, budgets, vendors, task dependencies, RSVPs, and WhatsApp communications—into a single, unified platform.
 
 ---
